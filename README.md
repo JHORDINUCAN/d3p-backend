@@ -19,7 +19,7 @@ Este es el backend del proyecto **D3P**, desarrollado con Node.js, Express y Typ
 
 4. Inicia el servidor:
    \\\
-   npm start
+   npm run dev
    \\\
 
 ## Endpoints Principales
