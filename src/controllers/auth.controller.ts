@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import AuthModel from '../models/auth';
+import pool from '../database';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -84,5 +85,39 @@ export const login = async (
     });
   } catch (err) {
     next(err);
+  }
+};
+
+export const updatePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { correo, nuevaContraseña } = req.body;
+
+  if (!correo || !nuevaContraseña) {
+    res.status(400).json({ success: false, message: 'Correo y nueva contraseña son obligatorios' });
+    return;
+  }
+
+  try {
+    // Verificar si el correo existe
+    const [user] = await pool.query('SELECT * FROM usuarios WHERE correo = ?', [correo]);
+    
+    if (!user || (user as any).length === 0) {
+      res.status(404).json({ success: false, message: 'Correo no registrado' });
+      return;
+    }
+
+    // Encriptar la nueva contraseña
+    const hashedPassword = await bcrypt.hash(nuevaContraseña, 10);
+
+    // Actualizar la contraseña en la base de datos
+    const [result] = await pool.query('UPDATE usuarios SET contraseña = ? WHERE correo = ?', [hashedPassword, correo]);
+
+    if ((result as any).affectedRows === 0) {
+      res.status(500).json({ success: false, message: 'Error al actualizar la contraseña' });
+      return;
+    }
+
+    res.status(200).json({ success: true, message: 'Contraseña actualizada correctamente' });
+  } catch (error) {
+    next(error);
   }
 };
