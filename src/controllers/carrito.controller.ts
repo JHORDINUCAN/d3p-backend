@@ -1,86 +1,102 @@
-import { Request, Response, NextFunction } from 'express';
-import CarritoModel from '../models/carrito';
+import { Request, Response } from 'express';
+import pool from '../database';
 
-export const crearCarrito = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+// Obtener productos del carrito completo por ID de usuario
+export const getCarritoCompleto = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id_usuario } = req.body;
-    if (!id_usuario) res.status(400).json({ success: false, message: 'Falta el ID del usuario' });
+    const { id_usuario } = req.params;
 
-    const result = await CarritoModel.crearCarrito(id_usuario);
-    res.status(201).json({ success: true, data: { id: result.id } });
-  } catch (err) {
-    next(err);
-  }
-};
+    // Realizamos la consulta y tipamos los resultados como cualquier array de objetos
+    const [rows]: any[] = await pool.query(`
+      SELECT 
+        c.id_carrito, -- Incluimos el id_carrito en la consulta
+        p.id_producto,
+        p.nombre,
+        p.descripcion,
+        p.precio,
+        p.imagen_url,
+        p.stock,
+        cd.cantidad
+      FROM carrito c
+      JOIN carrito_detalles cd ON c.id_carrito = cd.id_carrito
+      JOIN productos p ON p.id_producto = cd.id_producto
+      WHERE c.id_usuario = ? AND c.estado = 'activo'
+    `, [id_usuario]);
 
-export const getCarritoUsuario = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const id_usuario = parseInt(req.params.id_usuario);
-    const carrito = await CarritoModel.getCarritoUsuario(id_usuario);
-
-    if (!carrito) res.status(404).json({ success: false, message: 'No se encontró carrito activo' });
-    res.status(200).json({ success: true, data: carrito });
-  } catch (err) {
-    next(err);
-  }
-};
-
-export const agregarProducto = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const id_carrito = parseInt(req.params.id_carrito);
-    const { id_producto, cantidad } = req.body;
-
-    await CarritoModel.agregarProducto({ id_carrito, id_producto, cantidad });
-    res.status(200).json({ success: true, message: 'Producto agregado al carrito' });
-  } catch (err) {
-    next(err);
-  }
-};
-
-export const getProductosCarrito = async (
-    req: Request, 
-    res: Response, 
-    next: NextFunction
-  ): Promise<void> => {
-    try {
-      const id_carrito = parseInt(req.params.id_carrito);
-      const { productos, total } = await CarritoModel.getProductosCarrito(id_carrito);
-  
-      res.status(200).json({
-        success: true,
-        data: productos,
-        total
-      });
-    } catch (err) {
-      next(err);
+    // Validamos si no hay resultados
+    if (!rows || rows.length === 0) {
+      res.status(404).json({ success: false, message: "No se encontró un carrito activo para este usuario" });
+      return;
     }
-  };
-  
 
-export const eliminarProducto = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const id_carrito = parseInt(req.params.id_carrito);
-    const id_producto = parseInt(req.params.id_producto);
-
-    const success = await CarritoModel.eliminarProducto(id_carrito, id_producto);
-    if (!success) res.status(404).json({ success: false, message: 'No se encontró el producto' });
-
-    res.status(200).json({ success: true, message: 'Producto eliminado del carrito' });
-  } catch (err) {
-    next(err);
+    // Respondemos con los datos del carrito
+    res.json({
+      success: true,
+      data: {
+        id_carrito: rows[0].id_carrito, // Usamos el id_carrito del primer resultado
+        productos: rows
+      }
+    });
+  } catch (error) {
+    console.error("Error al obtener productos del carrito:", error);
+    res.status(500).json({ success: false, message: "Error interno del servidor" });
   }
 };
 
-export const actualizarEstadoCarrito = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+// Cambiar cantidad de producto
+export const cambiarCantidadProducto = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id_carrito = parseInt(req.params.id_carrito);
-    const { estado } = req.body;
+    const { id_carrito, id_producto } = req.params;
+    const { cantidad } = req.body;
 
-    const success = await CarritoModel.actualizarEstado(id_carrito, estado);
-    if (!success) res.status(404).json({ success: false, message: 'Carrito no encontrado' });
+    if (cantidad < 1) {
+      res.status(400).json({ success: false, message: "Cantidad inválida" });
+      return;
+    }
 
-    res.status(200).json({ success: true, message: 'Estado actualizado' });
-  } catch (err) {
-    next(err);
+    await pool.query(`
+      UPDATE carrito_detalles 
+      SET cantidad = ?
+      WHERE id_carrito = ? AND id_producto = ?
+    `, [cantidad, id_carrito, id_producto]);
+
+    res.json({ success: true, message: "Cantidad actualizada" });
+  } catch (error) {
+    console.error("Error al actualizar cantidad:", error);
+    res.status(500).json({ success: false, message: "Error interno del servidor" });
+  }
+};
+
+// Eliminar producto del carrito
+export const eliminarProducto = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_carrito, id_producto } = req.params;
+
+    await pool.query(`
+      DELETE FROM carrito_detalles
+      WHERE id_carrito = ? AND id_producto = ?
+    `, [id_carrito, id_producto]);
+
+    res.json({ success: true, message: "Producto eliminado del carrito" });
+  } catch (error) {
+    console.error("Error al eliminar producto:", error);
+    res.status(500).json({ success: false, message: "Error interno del servidor" });
+  }
+};
+
+// Vaciar carrito
+export const vaciarCarrito = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id_carrito } = req.params;
+
+    await pool.query(`
+      DELETE FROM carrito_detalles
+      WHERE id_carrito = ?
+    `, [id_carrito]);
+
+    res.json({ success: true, message: "Carrito vaciado" });
+  } catch (error) {
+    console.error("Error al vaciar carrito:", error);
+    res.status(500).json({ success: false, message: "Error interno del servidor" });
   }
 };
