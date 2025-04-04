@@ -8,6 +8,7 @@ import pedidosRouter from './routes/pedidos.routes';
 import authRouter from './routes/auth.routes';
 import metodosPagoRouter from './routes/metodos_pago.routes';
 import { config } from 'dotenv';
+import categoriaRoutes from "./routes/categoria.routes";
 
 config();
 
@@ -25,6 +26,8 @@ app.use('/api/carrito', carritoRouter);
 app.use('/api/pedidos', pedidosRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/metodos-pago', metodosPagoRouter);
+app.use('/api/categorias', categoriaRoutes); 
+
 
 app.get('/', (req, res) => {
   res.send('API de Productos funcionando');

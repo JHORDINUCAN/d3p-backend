@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
 import pool from '../database';
+import CarritoModel from '../models/carrito';
 
 // Obtener productos del carrito completo por ID de usuario
 export const getCarritoCompleto = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id_usuario } = req.params;
 
-    // Realizamos la consulta y tipamos los resultados como cualquier array de objetos
     const [rows]: any[] = await pool.query(`
       SELECT 
-        c.id_carrito, -- Incluimos el id_carrito en la consulta
+        c.id_carrito,
         p.id_producto,
         p.nombre,
         p.descripcion,
@@ -23,17 +23,15 @@ export const getCarritoCompleto = async (req: Request, res: Response): Promise<v
       WHERE c.id_usuario = ? AND c.estado = 'activo'
     `, [id_usuario]);
 
-    // Validamos si no hay resultados
     if (!rows || rows.length === 0) {
       res.status(404).json({ success: false, message: "No se encontró un carrito activo para este usuario" });
       return;
     }
 
-    // Respondemos con los datos del carrito
     res.json({
       success: true,
       data: {
-        id_carrito: rows[0].id_carrito, // Usamos el id_carrito del primer resultado
+        id_carrito: rows[0].id_carrito,
         productos: rows
       }
     });
@@ -43,7 +41,25 @@ export const getCarritoCompleto = async (req: Request, res: Response): Promise<v
   }
 };
 
-// Cambiar cantidad de producto
+// 🆕 NUEVO: Agregar producto al carrito
+export const agregarProductoAlCarrito = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id_carrito = parseInt(req.params.id_carrito);
+    const { id_producto, cantidad } = req.body;
+
+    if (!id_producto || !cantidad) {
+      res.status(400).json({ success: false, message: "Faltan campos necesarios" });
+      return;
+    }
+
+    await CarritoModel.agregarProducto({ id_carrito, id_producto, cantidad });
+    res.json({ success: true, message: "Producto agregado al carrito" });
+  } catch (error) {
+    console.error("Error al agregar producto:", error);
+    res.status(500).json({ success: false, message: "Error interno del servidor" });
+  }
+};
+
 export const cambiarCantidadProducto = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id_carrito, id_producto } = req.params;
@@ -67,7 +83,6 @@ export const cambiarCantidadProducto = async (req: Request, res: Response): Prom
   }
 };
 
-// Eliminar producto del carrito
 export const eliminarProducto = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id_carrito, id_producto } = req.params;
@@ -84,7 +99,6 @@ export const eliminarProducto = async (req: Request, res: Response): Promise<voi
   }
 };
 
-// Vaciar carrito
 export const vaciarCarrito = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id_carrito } = req.params;
@@ -96,7 +110,7 @@ export const vaciarCarrito = async (req: Request, res: Response): Promise<void> 
 
     res.json({ success: true, message: "Carrito vaciado" });
   } catch (error) {
-    console.error("Error al vaciar carrito:", error);
+    console.error("Error al vaciar el carrito:", error);
     res.status(500).json({ success: false, message: "Error interno del servidor" });
   }
 };

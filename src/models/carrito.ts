@@ -49,19 +49,17 @@ class CarritoModel {
        WHERE cd.id_carrito = ?`,
       [id_carrito]
     );
-  
+
     const productos = (rows as any[]).map(p => ({
       ...p,
       precio: parseFloat(p.precio),
       subtotal: parseFloat(p.subtotal)
     }));
-  
+
     const total = productos.reduce((sum, p) => sum + p.subtotal, 0);
-  
+
     return { productos, total };
   }
-  
-  
 
   static async eliminarProducto(id_carrito: number, id_producto: number): Promise<boolean> {
     const [result] = await pool.query(
@@ -78,6 +76,9 @@ class CarritoModel {
     );
     return (result as any).affectedRows > 0;
   }
+
+  // 🆕 NUEVO MÉTODO: agregarProducto (reutilizamos el existente)
+  // Ya está cubierto arriba con `static async agregarProducto(...)` así que no necesitas duplicarlo.
 }
 
 export default CarritoModel;
