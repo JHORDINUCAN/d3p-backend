@@ -292,11 +292,20 @@ export const getProductosDestacados = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Límite opcional para la cantidad de productos destacados
     const limit = Math.min(parseInt(req.query.limit || '5'), 20);
-    const productos = await ProductoModel.getDestacados(limit);
-    
+
+    // Consulta para obtener productos destacados
+    const [productos]: any[] = await pool.query(`
+      SELECT * 
+      FROM productos 
+      WHERE destacado = 1 
+      LIMIT ?
+    `, [limit]);
+
     res.status(200).json({ success: true, data: productos });
   } catch (error) {
+    console.error("Error al obtener productos destacados:", error);
     next(error);
   }
 };

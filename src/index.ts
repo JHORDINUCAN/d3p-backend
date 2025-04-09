@@ -9,6 +9,7 @@ import authRouter from './routes/auth.routes';
 import metodosPagoRouter from './routes/metodos_pago.routes';
 import { config } from 'dotenv';
 import categoriaRoutes from "./routes/categoria.routes";
+import stripeRoutes from './routes/stripe.routes';
 
 config();
 
@@ -27,6 +28,9 @@ app.use('/api/pedidos', pedidosRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/metodos-pago', metodosPagoRouter);
 app.use('/api/categorias', categoriaRoutes); 
+
+// Rutas de Stripe
+app.use('/api/stripe', stripeRoutes);
 
 
 app.get('/', (req, res) => {

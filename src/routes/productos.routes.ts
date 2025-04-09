@@ -4,7 +4,8 @@ import {
   getProductoById,
   createProducto,
   updateProducto,
-  deleteProducto
+  deleteProducto,
+  getProductosDestacados
 } from '../controllers/productos.controller';
 import { verificarToken, soloAdmin } from '../middlewares/auth.middleware';
 import { RequestHandler } from 'express';
@@ -17,6 +18,8 @@ const wrapController = (controller: (...args: any[]) => Promise<void>): RequestH
 };
 
 const router = Router();
+// Ruta para obtener productos destacados
+router.get("/destacados", getProductosDestacados);
 
 router.get('/', wrapController(getProductos));
 router.get('/:id', wrapController(getProductoById));
