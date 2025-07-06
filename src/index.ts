@@ -12,6 +12,11 @@ import authRouter from './routes/auth.routes';
 import metodosPagoRouter from './routes/metodos_pago.routes';
 import categoriaRoutes from './routes/categoria.routes';
 import stripeRoutes from './routes/stripe.routes';
+import whatsappRoutes from './routes/whatsapp.routes';
+import locationRoutes from './routes/location.routes';
+import weatherRoutes from './routes/weather.routes';
+import exchangeRoutes from "./routes/exchange.routes";
+import recaptchaRouter from "./routes/recaptcha.routes";
 
 config(); // Cargar variables de entorno
 
@@ -31,6 +36,11 @@ app.use('/api/auth', authRouter);
 app.use('/api/metodos-pago', metodosPagoRouter);
 app.use('/api/categorias', categoriaRoutes); 
 app.use('/api/stripe', stripeRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/ubicacion', locationRoutes);
+app.use('/api/weather', weatherRoutes);
+app.use("/api", exchangeRoutes);
+app.use("/api", recaptchaRouter);
 
 // Ruta raíz
 app.get('/', (req, res) => {

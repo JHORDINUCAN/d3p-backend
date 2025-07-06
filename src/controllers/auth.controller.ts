@@ -3,6 +3,7 @@ import AuthModel from '../models/auth';
 import pool from '../database';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { verifyRecaptcha } from "../services/recaptchaService";
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secretoUltraSegurísimo';
 
@@ -49,44 +50,64 @@ export const login = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { correo, contraseña } = req.body;
+    const { correo, contraseña, captchaToken } = req.body;
 
+    // 1.  verifica que venga el captcha
+    if (!captchaToken) {
+      res
+        .status(400)
+        .json({ success: false, message: "Falta captchaToken" });
+      return;
+    }
+
+    // 2.  valida con Google
+    const captchaOk = await verifyRecaptcha(captchaToken);
+    if (!captchaOk) {
+      res
+        .status(403)
+        .json({ success: false, message: "Captcha inválido" });
+      return;
+    }
+
+    // 3.  lógica de autenticación normal
     const usuario = await AuthModel.findByCorreo(correo);
     if (!usuario) {
-      res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+      res
+        .status(404)
+        .json({ success: false, message: "Usuario no encontrado" });
       return;
     }
 
     const isMatch = await bcrypt.compare(contraseña, usuario.contraseña);
     if (!isMatch) {
-      res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
+      res
+        .status(401)
+        .json({ success: false, message: "Contraseña incorrecta" });
       return;
     }
 
     const token = jwt.sign(
-      {
-        id_usuario: usuario.id_usuario,
-        rol: usuario.rol
-      },
+      { id_usuario: usuario.id_usuario, rol: usuario.rol },
       JWT_SECRET,
-      { expiresIn: '2h' }
+      { expiresIn: "2h" }
     );
 
     res.status(200).json({
       success: true,
-      message: 'Login exitoso',
+      message: "Login exitoso",
       token,
       usuario: {
         id_usuario: usuario.id_usuario,
         nombre: usuario.nombre,
         correo: usuario.correo,
-        rol: usuario.rol
-      }
+        rol: usuario.rol,
+      },
     });
   } catch (err) {
     next(err);
   }
 };
+
 
 export const updatePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { correo, nuevaContraseña } = req.body;

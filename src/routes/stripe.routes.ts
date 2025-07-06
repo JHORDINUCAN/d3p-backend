@@ -5,7 +5,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("La clave secreta de Stripe no está configurada en las variables de entorno.");
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-03-31.basil' });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-06-30.basil' });
 const router = Router();
 
 router.post('/crear-pago', async (req: Request, res: Response): Promise<void> => {
