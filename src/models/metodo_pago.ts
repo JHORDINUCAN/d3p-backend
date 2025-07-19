@@ -1,16 +1,8 @@
 import pool from '../database';
-
-export interface MetodoPago {
-  id_pago?: number;
-  id_pedido: number;
-  monto: number;
-  metodo: string;
-  estado?: 'pendiente' | 'pagado' | 'rechazado';
-  fecha_pago?: Date;
-}
+import { MetodoPagoDTO } from '../DTO/metodo_pago.dto';
 
 class MetodoPagoModel {
-    static async create(metodo: MetodoPago): Promise<{ id: number }> {
+    static async create(metodo: MetodoPagoDTO): Promise<{ id: number }> {
         const [result] = await pool.query(
           `INSERT INTO metodos_de_pago (id_pedido, monto, metodo, estado, fecha_pago)
            VALUES (?, ?, ?, ?, NOW())`,
@@ -25,15 +17,15 @@ class MetodoPagoModel {
       }
       
 
-  static async getByPedido(id_pedido: number): Promise<MetodoPago | null> {
+  static async getByPedido(id_pedido: number): Promise<MetodoPagoDTO | null> {
     const [rows] = await pool.query(
       `SELECT * FROM metodos_de_pago WHERE id_pedido = ? LIMIT 1`,
       [id_pedido]
     );
-    return (rows as MetodoPago[])[0] || null;
+    return (rows as MetodoPagoDTO[])[0] || null;
   }
 
-  static async update(id_pago: number, datos: Partial<MetodoPago>): Promise<boolean> {
+  static async update(id_pago: number, datos: Partial<MetodoPagoDTO>): Promise<boolean> {
     const campos = Object.entries(datos)
       .filter(([_, v]) => v !== undefined)
       .map(([k]) => `${k} = ?`).join(', ');

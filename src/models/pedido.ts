@@ -1,20 +1,5 @@
 import pool from '../database';
-
-export interface Pedido {
-  id_pedido?: number;
-  id_usuario: number;
-  fecha_pedido?: Date;
-  estado?: string;
-  total: number;
-}
-
-export interface PedidoDetalle {
-  id_detalle_pedido?: number;
-  id_pedido: number;
-  id_producto: number;
-  cantidad: number;
-  precio_unitario: number;
-}
+import { PedidoDTO, PedidoDetalleDTO } from '../DTO/pedido.dto';
 
 class PedidoModel {
   static async crearPedido(id_usuario: number, carrito_id: number): Promise<{ id: number }> {
@@ -77,15 +62,15 @@ class PedidoModel {
     }
   }
 
-  static async getPedidosByUsuario(id_usuario: number): Promise<Pedido[]> {
+  static async getPedidosByUsuario(id_usuario: number): Promise<PedidoDTO[]> {
     const [rows] = await pool.query(
       `SELECT * FROM pedidos WHERE id_usuario = ? ORDER BY fecha_pedido DESC`,
       [id_usuario]
     );
-    return rows as Pedido[];
+    return rows as PedidoDTO[];
   }
 
-  static async getDetallesPedido(id_pedido: number): Promise<PedidoDetalle[]> {
+  static async getDetallesPedido(id_pedido: number): Promise<PedidoDetalleDTO[]> {
     const [rows] = await pool.query(
       `SELECT pd.*, p.nombre, p.imagen_url
        FROM pedido_detalles pd
@@ -93,7 +78,7 @@ class PedidoModel {
        WHERE pd.id_pedido = ?`,
       [id_pedido]
     );
-    return rows as PedidoDetalle[];
+    return rows as PedidoDetalleDTO[];
   }
 }
 

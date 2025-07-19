@@ -1,18 +1,5 @@
 import pool from '../database';
-
-export interface Carrito {
-  id_carrito?: number;
-  id_usuario: number;
-  estado?: 'activo' | 'finalizado' | 'cancelado';
-  fecha_creacion?: Date;
-}
-
-export interface CarritoDetalle {
-  id_detalle?: number;
-  id_carrito: number;
-  id_producto: number;
-  cantidad: number;
-}
+import { CarritoDTO, CarritoDetalleDTO } from '../DTO/carrito.dto';
 
 class CarritoModel {
   static async crearCarrito(id_usuario: number): Promise<{ id: number }> {
@@ -23,15 +10,15 @@ class CarritoModel {
     return { id: (result as any).insertId };
   }
 
-  static async getCarritoUsuario(id_usuario: number): Promise<Carrito | null> {
+  static async getCarritoUsuario(id_usuario: number): Promise<CarritoDTO | null> {
     const [rows] = await pool.query(
       `SELECT * FROM carrito WHERE id_usuario = ? AND estado = 'activo' LIMIT 1`,
       [id_usuario]
     );
-    return (rows as Carrito[])[0] || null;
+    return (rows as CarritoDTO[])[0] || null;
   }
 
-  static async agregarProducto(detalle: CarritoDetalle): Promise<void> {
+  static async agregarProducto(detalle: CarritoDetalleDTO): Promise<void> {
     await pool.query(
       `INSERT INTO carrito_detalles (id_carrito, id_producto, cantidad)
        VALUES (?, ?, ?)

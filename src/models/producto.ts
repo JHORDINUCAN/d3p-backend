@@ -1,21 +1,5 @@
 import pool from '../database';
-
-interface Producto {
-  id?: number;
-  nombre: string;
-  descripcion?: string;
-  precio: number;
-  stock?: number;
-  categoria_id: number;
-  imagen_url?: string;
-  destacado?: boolean;
-  created_at?: Date;
-  updated_at?: Date;
-}
-
-interface ProductoConCategoria extends Producto {
-  categoria_nombre?: string;
-}
+import { ProductoDTO, ProductoConCategoriaDTO } from '../DTO/producto.dto';
 
 class ProductoModel {
   static async getAll({
@@ -30,7 +14,7 @@ class ProductoModel {
     categoria_id?: number;
     destacado?: boolean;
     search?: string;
-  } = {}): Promise<{ productos: ProductoConCategoria[]; total: number }> {
+  } = {}): Promise<{ productos: ProductoConCategoriaDTO[]; total: number }> {
     const offset = (page - 1) * limit;
     let query = `
       SELECT p.*, c.nombre as categoria_nombre 
@@ -80,7 +64,7 @@ class ProductoModel {
     const total = (totalRows as any)[0].total;
 
     return {
-      productos: productos as ProductoConCategoria[],
+      productos: productos as ProductoConCategoriaDTO[],
       total
     };
   }
@@ -88,7 +72,7 @@ class ProductoModel {
   /**
    * Obtener producto por ID con información de categoría
    */
-  static async getById(id: number): Promise<ProductoConCategoria | null> {
+  static async getById(id: number): Promise<ProductoConCategoriaDTO | null> {
     const [rows] = await pool.query(
       `SELECT p.*, c.nombre as categoria_nombre 
        FROM productos p
@@ -96,13 +80,13 @@ class ProductoModel {
        WHERE p.id_producto = ?`,
       [id]
     );
-    return (rows as ProductoConCategoria[])[0] || null;
+    return (rows as ProductoConCategoriaDTO[])[0] || null;
   }
 
   /**
    * Crear nuevo producto con validación de categoría
    */
-  static async create(producto: Omit<Producto, 'id'>): Promise<{ id: number }> {
+  static async create(producto: Omit<ProductoDTO, 'id'>): Promise<{ id: number }> {
     // Verificar que la categoría exista
     const [categoria] = await pool.query(
       'SELECT id FROM categorias WHERE id = ?',
@@ -136,7 +120,7 @@ class ProductoModel {
    */
   static async update(
     id: number,
-    producto: Partial<Omit<Producto, 'id'>>
+    producto: Partial<Omit<ProductoDTO, 'id'>>
   ): Promise<boolean> {
     if (producto.categoria_id) {
       // Verificar que la nueva categoría exista
@@ -178,7 +162,7 @@ class ProductoModel {
   /**
    * Obtener productos destacados
    */
-  static async getDestacados(limit = 5): Promise<ProductoConCategoria[]> {
+  static async getDestacados(limit = 5): Promise<ProductoConCategoriaDTO[]> {
     const [rows] = await pool.query(
       `SELECT p.*, c.nombre as categoria_nombre 
        FROM productos p
@@ -187,7 +171,7 @@ class ProductoModel {
        LIMIT ?`,
       [limit]
     );
-    return rows as ProductoConCategoria[];
+    return rows as ProductoConCategoriaDTO[];
   }
 }
 

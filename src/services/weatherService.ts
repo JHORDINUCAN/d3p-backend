@@ -26,6 +26,7 @@ export const getWeatherByCity = async (
       units: "metric",
       lang,
     },
+    timeout: 10000
   });
 
   return {

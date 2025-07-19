@@ -147,7 +147,8 @@ export const createProducto = async (
       stock: stock ? Number(stock) : 0,
       categoria_id: Number(categoria_id),
       imagen_url,
-      destacado: destacado === true || destacado === 'true'
+      destacado: destacado === true || destacado === 'true',
+      activo: true // Asumimos que el producto es activo al crearlo
     });
 
     await connection.commit();

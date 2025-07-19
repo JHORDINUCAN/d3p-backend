@@ -1,21 +1,13 @@
 import pool from '../database';
-
-export interface Usuario {
-  id_usuario?: number;
-  nombre: string;
-  correo: string;
-  contraseña: string;
-  direccion?: string;
-  rol?: 'usuario' | 'admin';
-}
+import { UsuarioDTO } from '../DTO/auth.dto';
 
 class AuthModel {
-  static async findByCorreo(correo: string): Promise<Usuario | null> {
+  static async findByCorreo(correo: string): Promise<UsuarioDTO | null> {
     const [rows] = await pool.query('SELECT * FROM usuarios WHERE correo = ?', [correo]);
-    return (rows as Usuario[])[0] || null;
+    return (rows as UsuarioDTO[])[0] || null;
   }
 
-  static async create(usuario: Usuario): Promise<{ id: number }> {
+  static async create(usuario: UsuarioDTO): Promise<{ id: number }> {
     const [result] = await pool.query(
       `INSERT INTO usuarios (nombre, correo, contraseña, direccion, rol)
        VALUES (?, ?, ?, ?, ?)`,

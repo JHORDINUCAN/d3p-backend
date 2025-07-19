@@ -1,29 +1,18 @@
 import pool from '../database';
-
-export interface Contacto {
-  id_mensaje?: number;
-  nombre_cliente?: string;
-  correo?: string;
-  mensaje: string;
-  estado?: 'pendiente' | 'leido' | 'respondido';
-  respuesta?: string;
-  fecha_envio?: Date;
-  fecha_respuesta?: Date | null;
-  id_usuario?: number | null;
-}
+import { ContactoDTO } from '../DTO/contacto.dto';
 
 class ContactoModel {
-  static async getAll(): Promise<Contacto[]> {
+  static async getAll(): Promise<ContactoDTO[]> {
     const [rows] = await pool.query('SELECT * FROM contactos ORDER BY fecha_envio DESC');
-    return rows as Contacto[];
+    return rows as ContactoDTO[];
   }
 
-  static async getById(id: number): Promise<Contacto | null> {
+  static async getById(id: number): Promise<ContactoDTO | null> {
     const [rows] = await pool.query('SELECT * FROM contactos WHERE id_mensaje = ?', [id]);
-    return (rows as Contacto[])[0] || null;
+    return (rows as ContactoDTO[])[0] || null;
   }
 
-  static async create(data: Contacto): Promise<{ id: number }> {
+  static async create(data: ContactoDTO): Promise<{ id: number }> {
     const [result] = await pool.query(
       `INSERT INTO contactos (nombre_cliente, correo, mensaje, estado, id_usuario)
        VALUES (?, ?, ?, ?, ?)`,
@@ -32,7 +21,7 @@ class ContactoModel {
     return { id: (result as any).insertId };
   }
 
-  static async update(id: number, data: Partial<Contacto>): Promise<boolean> {
+  static async update(id: number, data: Partial<ContactoDTO>): Promise<boolean> {
     const fields = Object.entries(data).filter(([_, value]) => value !== undefined);
     if (fields.length === 0) return false;
 
