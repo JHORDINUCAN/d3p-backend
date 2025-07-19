@@ -9,7 +9,7 @@ export interface ProductoDTO {
   destacado?: boolean;
   created_at?: Date;
   updated_at?: Date;
-  activo: boolean;
+  activo?: boolean;
 }
 
 export interface ProductoConCategoriaDTO extends ProductoDTO {

@@ -151,6 +151,16 @@ class ProductoModel {
     return (result as any).affectedRows > 0;
   }
 
+static async toggleActivo(id: number, activo: boolean): Promise<boolean> {
+  const [result] = await pool.query(
+    'UPDATE productos SET activo = ? WHERE id_producto = ?',
+    [activo, id]
+  );
+  return (result as any).affectedRows > 0;
+}
+
+
+
   /**
    * Eliminar producto
    */

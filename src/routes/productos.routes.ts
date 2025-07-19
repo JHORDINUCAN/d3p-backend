@@ -5,7 +5,8 @@ import {
   createProducto,
   updateProducto,
   deleteProducto,
-  getProductosDestacados
+  getProductosDestacados,
+  toggleEstadoProducto
 } from '../controllers/productos.controller';
 import { verificarToken, soloAdmin } from '../middlewares/auth.middleware';
 import { RequestHandler } from 'express';
@@ -27,5 +28,6 @@ router.get('/:id', wrapController(getProductoById));
 router.post('/', verificarToken, soloAdmin, wrapController(createProducto));
 router.put('/:id', verificarToken, soloAdmin, wrapController(updateProducto));
 router.delete('/:id', verificarToken, soloAdmin, wrapController(deleteProducto));
+router.patch('/:id/estado', verificarToken, soloAdmin, wrapController(toggleEstadoProducto));
 
 export default router;

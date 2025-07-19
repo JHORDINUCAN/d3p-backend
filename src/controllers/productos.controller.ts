@@ -287,6 +287,39 @@ export const deleteProducto = async (
   }
 };
 
+export const toggleEstadoProducto = async (
+  req: Request<{ id: string }, {}, { activo: boolean }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const { activo } = req.body;
+
+    if (isNaN(id) || typeof activo !== "boolean") {
+      res.status(400).json({ success: false, message: "Datos inválidos" });
+      return;
+    }
+
+    const productoExistente = await ProductoModel.getById(id);
+    if (!productoExistente) {
+      res.status(404).json({ success: false, message: 'Producto no encontrado' });
+      return;
+    }
+
+    const result = await ProductoModel.toggleActivo(id, activo);
+    if (!result) {
+      res.status(500).json({ success: false, message: 'No se pudo actualizar el estado' });
+      return;
+    }
+
+    res.status(200).json({ success: true, message: `Producto ${activo ? 'activado' : 'desactivado'}` });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 export const getProductosDestacados = async (
   req: Request<{}, {}, {}, { limit?: string }>,
   res: Response,
