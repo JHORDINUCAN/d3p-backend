@@ -5,4 +5,5 @@ export interface UsuarioDTO {
   contraseña: string;
   direccion?: string;
   rol?: 'usuario' | 'admin';
+  activo?: boolean;
 }
