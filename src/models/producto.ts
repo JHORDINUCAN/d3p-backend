@@ -20,7 +20,7 @@ class ProductoModel {
       SELECT p.*, c.nombre as categoria_nombre 
       FROM productos p
       JOIN categorias c ON p.categoria_id = c.id
-      WHERE 1=1
+      WHERE 1=1 
     `;
     const params = [];
 

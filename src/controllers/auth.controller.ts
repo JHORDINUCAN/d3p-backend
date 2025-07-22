@@ -142,3 +142,14 @@ export const updatePassword = async (req: Request, res: Response, next: NextFunc
     next(error);
   }
 };
+
+// usuarios.controller.ts
+export const obtenerUsuarios = async (req: Request, res: Response) => {
+  try {
+    const [usuarios] = await pool.query("SELECT id_usuario, nombre, correo, direccion, rol FROM usuarios WHERE rol != 'admin'");
+    res.json(usuarios);
+  } catch (error) {
+    console.error("Error al obtener usuarios:", error);
+    res.status(500).json({ message: "Error al obtener usuarios" });
+  }
+};

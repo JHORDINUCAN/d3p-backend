@@ -4,7 +4,6 @@ import { getUbicacion }   from "../services/locationService";
 
 const router = Router();
 
-/* GET /api/clima   (opcional ?ciudad=  &pais= ) */
 router.get("/", async (req, res) => {
   try {
     // 1. intenta tomar query params

@@ -17,6 +17,9 @@ import locationRoutes from './routes/location.routes';
 import weatherRoutes from './routes/weather.routes';
 import exchangeRoutes from "./routes/exchange.routes";
 import recaptchaRouter from "./routes/recaptcha.routes";
+import adminRoutes from "./routes/admin.routes";
+import categoriasRoutes from "./routes/categoria.routes";
+import usuariosRoutes from "./routes/auth.routes";
 
 config(); // Cargar variables de entorno
 
@@ -27,6 +30,7 @@ app.use(cors());
 app.use(express.json());
 
 // Rutas API
+app.use("/api/admin", adminRoutes);
 app.use('/api/productos', productosRouter);
 app.use('/api/notificaciones', notificacionesRouter); 
 app.use('/api/contactos', contactosRouter);
@@ -41,6 +45,9 @@ app.use('/api/ubicacion', locationRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use("/api", exchangeRoutes);
 app.use("/api", recaptchaRouter);
+app.use(categoriasRoutes);
+app.use("/api/categorias", categoriasRoutes);
+app.use("/api", usuariosRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {

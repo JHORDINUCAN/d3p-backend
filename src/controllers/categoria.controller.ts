@@ -35,3 +35,48 @@ export const getProductosPorCategoria = async (req: Request, res: Response): Pro
     res.status(500).json({ success: false, message: "Error interno del servidor" });
   }
 };
+
+// Actualizar una categoría
+export const updateCategoria = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { nombre, descripcion } = req.body;
+
+    const [result]: any = await pool.query(
+      "UPDATE categorias SET nombre = ?, descripcion = ? WHERE id = ?",
+      [nombre, descripcion, id]
+    );
+
+    if (result.affectedRows === 0) {
+      res.status(404).json({ success: false, message: "Categoría no encontrada" });
+      return;
+    }
+
+    res.json({ success: true, message: "Categoría actualizada correctamente" });
+  } catch (error) {
+    console.error("Error al actualizar categoría:", error);
+    res.status(500).json({ success: false, message: "Error interno del servidor" });
+  }
+};
+
+export const crearCategoria = async (req: Request, res: Response) => {
+  try {
+    const { nombre, descripcion } = req.body;
+
+    if (!nombre || !descripcion) {
+      return res.status(400).json({ success: false, message: "Faltan campos" });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO categorias (nombre, descripcion) VALUES (?, ?)`,
+      [nombre, descripcion]
+    );
+
+    res.status(201).json({ success: true, message: "Categoría creada correctamente" });
+  } catch (error) {
+    console.error("Error al crear categoría:", error);
+    res.status(500).json({ success: false, message: "Error interno del servidor" });
+  }
+};
+
+

@@ -90,31 +90,35 @@ export const agregarProductoPorUsuario = async (req: Request, res: Response): Pr
     const { id_usuario } = req.params;
     const { id_producto, cantidad } = req.body;
 
+    if (req.usuario?.id_usuario !== Number(id_usuario)) {
+      res.status(403).json({ success: false, message: "No tienes permisos para modificar este carrito" });
+      return;
+    }
+
     if (!id_producto || !cantidad) {
       res.status(400).json({ success: false, message: "Faltan campos necesarios" });
       return;
     }
 
-    // Buscar el carrito activo del usuario
+    // Buscar o crear carrito
     let [carritoRows]: any[] = await pool.query(`
       SELECT id_carrito 
       FROM carrito 
       WHERE id_usuario = ? AND estado = 'activo'
     `, [id_usuario]);
 
-    // Si no hay un carrito activo, crear uno nuevo
     if (!carritoRows || carritoRows.length === 0) {
       const [result]: any = await pool.query(`
         INSERT INTO carrito (id_usuario, estado) 
         VALUES (?, 'activo')
       `, [id_usuario]);
 
-      carritoRows = [{ id_carrito: result.insertId }]; // Obtener el ID del nuevo carrito
+      carritoRows = [{ id_carrito: result.insertId }];
     }
 
     const id_carrito = carritoRows[0].id_carrito;
 
-    // Verificar si el producto ya existe en el carrito
+    // Verificar si ya está el producto
     const [productoExistente]: any[] = await pool.query(`
       SELECT cantidad 
       FROM carrito_detalles 
@@ -122,7 +126,6 @@ export const agregarProductoPorUsuario = async (req: Request, res: Response): Pr
     `, [id_carrito, id_producto]);
 
     if (productoExistente.length > 0) {
-      // Si el producto ya existe, actualizar la cantidad
       const nuevaCantidad = productoExistente[0].cantidad + cantidad;
       await pool.query(`
         UPDATE carrito_detalles 
@@ -132,7 +135,6 @@ export const agregarProductoPorUsuario = async (req: Request, res: Response): Pr
 
       res.json({ success: true, message: "Cantidad actualizada en el carrito" });
     } else {
-      // Si el producto no existe, agregarlo al carrito
       await pool.query(`
         INSERT INTO carrito_detalles (id_carrito, id_producto, cantidad) 
         VALUES (?, ?, ?)
@@ -145,6 +147,7 @@ export const agregarProductoPorUsuario = async (req: Request, res: Response): Pr
     res.status(500).json({ success: false, message: "Error interno del servidor" });
   }
 };
+
 
 // 🆕 NUEVO: Agregar producto al carrito
 export const agregarProductoAlCarrito = async (req: Request, res: Response): Promise<void> => {
