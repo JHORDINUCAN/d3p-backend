@@ -44,34 +44,18 @@ class ProductoModel {
 
     const [productos] = await pool.query(query, params);
 
-    // Consulta para el total
     let countQuery = 'SELECT COUNT(*) as total FROM productos WHERE 1=1';
-    const countParams = params.slice(0, -2); // Excluir LIMIT y OFFSET
-
-    if (categoria_id) {
-      countQuery += ' AND categoria_id = ?';
-    }
-
-    if (destacado !== undefined) {
-      countQuery += ' AND destacado = ?';
-    }
-
-    if (search) {
-      countQuery += ' AND (nombre LIKE ? OR descripcion LIKE ?)';
-    }
+    const countParams = params.slice(0, -2);
+    if (categoria_id) countQuery += ' AND categoria_id = ?';
+    if (destacado !== undefined) countQuery += ' AND destacado = ?';
+    if (search) countQuery += ' AND (nombre LIKE ? OR descripcion LIKE ?)';
 
     const [totalRows] = await pool.query(countQuery, countParams);
     const total = (totalRows as any)[0].total;
 
-    return {
-      productos: productos as ProductoConCategoriaDTO[],
-      total
-    };
+    return { productos: productos as ProductoConCategoriaDTO[], total };
   }
 
-  /**
-   * Obtener producto por ID con información de categoría
-   */
   static async getById(id: number): Promise<ProductoConCategoriaDTO | null> {
     const [rows] = await pool.query(
       `SELECT p.*, c.nombre as categoria_nombre 
@@ -83,15 +67,8 @@ class ProductoModel {
     return (rows as ProductoConCategoriaDTO[])[0] || null;
   }
 
-  /**
-   * Crear nuevo producto con validación de categoría
-   */
   static async create(producto: Omit<ProductoDTO, 'id'>): Promise<{ id: number }> {
-    // Verificar que la categoría exista
-    const [categoria] = await pool.query(
-      'SELECT id FROM categorias WHERE id = ?',
-      [producto.categoria_id]
-    );
+    const [categoria] = await pool.query('SELECT id FROM categorias WHERE id = ?', [producto.categoria_id]);
 
     if (!(categoria as any).length) {
       throw new Error('La categoría especificada no existe');
@@ -99,8 +76,8 @@ class ProductoModel {
 
     const [result] = await pool.query(
       `INSERT INTO productos 
-       (nombre, descripcion, precio, stock, categoria_id, imagen_url, destacado)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       (nombre, descripcion, precio, stock, categoria_id, imagen_url, destacado, activo)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         producto.nombre,
         producto.descripcion,
@@ -108,70 +85,51 @@ class ProductoModel {
         producto.stock || 0,
         producto.categoria_id,
         producto.imagen_url || null,
-        producto.destacado || false
+        producto.destacado || false,
+        producto.activo || true
       ]
     );
 
     return { id: (result as any).insertId };
   }
 
-  /**
-   * Actualizar producto
-   */
-  static async update(
-    id: number,
-    producto: Partial<Omit<ProductoDTO, 'id'>>
-  ): Promise<boolean> {
-    if (producto.categoria_id) {
-      // Verificar que la nueva categoría exista
-      const [categoria] = await pool.query(
-        'SELECT id FROM categorias WHERE id = ?',
-        [producto.categoria_id]
-      );
+  static async update(id: number, producto: Partial<ProductoDTO>): Promise<boolean> {
+  if (producto.categoria_id) {
+    const [categoria] = await pool.query('SELECT id FROM categorias WHERE id = ?', [producto.categoria_id]);
 
-      if (!(categoria as any).length) {
-        throw new Error('La categoría especificada no existe');
-      }
+    if (!(categoria as any).length) {
+      throw new Error('La categoría especificada no existe');
     }
-
-    const fieldsToUpdate = Object.entries(producto)
-      .filter(([_, value]) => value !== undefined)
-      .map(([key]) => `${key} = ?`)
-      .join(', ');
-
-    if (!fieldsToUpdate) return false;
-
-    const values = Object.values(producto).filter(value => value !== undefined);
-
-    const [result] = await pool.query(
-      `UPDATE productos SET ${fieldsToUpdate} WHERE id_producto = ?`,
-      [...values, id]
-    );
-
-    return (result as any).affectedRows > 0;
   }
 
-static async toggleActivo(id: number, activo: boolean): Promise<boolean> {
+  const fieldsToUpdate = Object.entries(producto)
+    .filter(([_, value]) => value !== undefined)
+    .map(([key]) => `${key} = ?`)
+    .join(', ');
+
+  if (!fieldsToUpdate) return false;
+
+  const values = Object.values(producto).filter(value => value !== undefined);
+
   const [result] = await pool.query(
-    'UPDATE productos SET activo = ? WHERE id_producto = ?',
-    [activo, id]
+    `UPDATE productos SET ${fieldsToUpdate} WHERE id_producto = ?`,
+    [...values, id]
   );
+
   return (result as any).affectedRows > 0;
 }
 
 
-
-  /**
-   * Eliminar producto
-   */
   static async delete(id: number): Promise<boolean> {
     const [result] = await pool.query('DELETE FROM productos WHERE id_producto = ?', [id]);
     return (result as any).affectedRows > 0;
   }
 
-  /**
-   * Obtener productos destacados
-   */
+  static async toggleActivo(id: number, activo: boolean): Promise<boolean> {
+    const [result] = await pool.query('UPDATE productos SET activo = ? WHERE id_producto = ?', [activo, id]);
+    return (result as any).affectedRows > 0;
+  }
+
   static async getDestacados(limit = 5): Promise<ProductoConCategoriaDTO[]> {
     const [rows] = await pool.query(
       `SELECT p.*, c.nombre as categoria_nombre 

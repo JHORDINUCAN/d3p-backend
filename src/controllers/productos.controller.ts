@@ -1,6 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
-import ProductoModel from '../models/producto';
-import pool from '../database';
+import { Request, Response, NextFunction } from "express";
+import ProductoModel from "../models/producto"; // Asegúrate de tener este modelo correctamente implementado
+import pool from "../database";
+import { ProductoDTO } from "../DTO/producto.dto";
+
 
 // Tipos mejorados para TypeScript
 interface ProductoQueryParams {
@@ -147,11 +149,9 @@ export const createProducto = async (
       stock: stock ? Number(stock) : 0,
       categoria_id: Number(categoria_id),
       imagen_url,
-      destacado: destacado === true || destacado === 'true',
       activo: true // Asumimos que el producto es activo al crearlo
     });
 
-    await connection.commit();
 
     res.status(201).json({
       success: true,
@@ -176,7 +176,8 @@ export const updateProducto = async (
     await connection.beginTransaction();
 
     const { id: productId, error } = validarIdProducto(req.params.id);
-    
+    console.log("ID recibido para actualizar producto:", productId);
+
     if (error) {
       res.status(error.status).json({ success: false, message: error.message });
       return;
@@ -188,21 +189,15 @@ export const updateProducto = async (
     }
 
     const productoExistente = await ProductoModel.getById(productId);
+    console.log("Producto encontrado:", productoExistente);
+
     if (!productoExistente) {
       res.status(404).json({ success: false, message: 'Producto no encontrado' });
       return;
     }
 
     const { nombre, descripcion, precio, stock, categoria_id, imagen_url, destacado } = req.body;
-    const updates: Partial<{
-      nombre: string;
-      descripcion: string;
-      precio: number;
-      stock: number;
-      categoria_id: number;
-      imagen_url: string;
-      destacado: boolean;
-    }> = {};
+    const updates: Partial<ProductoDTO> = {};
 
     if (nombre !== undefined) updates.nombre = nombre.trim();
     if (descripcion !== undefined) updates.descripcion = descripcion?.trim();
@@ -227,7 +222,6 @@ export const updateProducto = async (
     }
 
     const success = await ProductoModel.update(productId, updates);
-    
     if (!success) {
       res.status(500).json({ success: false, message: 'Error al actualizar producto' });
       return;
@@ -235,13 +229,15 @@ export const updateProducto = async (
 
     await connection.commit();
     res.status(200).json({ success: true, message: 'Producto actualizado exitosamente' });
-  } catch (error) {
+  } catch (error: any) {
     await connection.rollback();
-    next(error);
+    console.error("Error al actualizar producto:", error);
+    res.status(500).json({ success: false, message: error.message || 'Hubo un error al actualizar el producto' });
   } finally {
     connection.release();
   }
 };
+
 
 export const deleteProducto = async (
   req: Request<ProductoParams>,
@@ -319,27 +315,16 @@ export const toggleEstadoProducto = async (
   }
 };
 
-
 export const getProductosDestacados = async (
   req: Request<{}, {}, {}, { limit?: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    // Límite opcional para la cantidad de productos destacados
     const limit = Math.min(parseInt(req.query.limit || '5'), 20);
-
-    // Consulta para obtener productos destacados
-    const [productos]: any[] = await pool.query(`
-      SELECT * 
-      FROM productos 
-      WHERE destacado = 1 
-      LIMIT ?
-    `, [limit]);
-
+    const productos = await ProductoModel.getDestacados(limit);
     res.status(200).json({ success: true, data: productos });
   } catch (error) {
-    console.error("Error al obtener productos destacados:", error);
     next(error);
   }
 };
